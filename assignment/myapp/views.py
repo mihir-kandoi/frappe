@@ -84,7 +84,7 @@ def import_books(request):
         serializer = BooksSerializer(data=response, many=True)
         if serializer.is_valid():
             serializer.save()
-            return HttpResponse({"books_added": len(response)}, status=201)
+            return JsonResponse({"books_added": len(response)}, status=201)
         else:
             return HttpResponse(serializer.errors, status=500)
     except requests.exceptions.RequestException as e:
