@@ -13,5 +13,6 @@ urlpatterns = [
 	path('', include(router.urls)),
 	path('api-auth/', include('rest_framework.urls')),
     path('transactions/<int:id>/return/', views.return_transaction, name='return_transaction'),
-    path('import-books/', views.import_books, name='import_books')
+    path('import-books/', views.import_books, name='import_books'),
+    path('find-transactions/', views.find_transactions, name='find_transactions')
 ]

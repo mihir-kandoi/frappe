@@ -40,7 +40,7 @@ class Transaction(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.returned_on:
-            if self.member.outstanding > 500:
+            if self.member.outstanding >= 500:
                 raise ValidationError("Cannot issue book: Member's outstanding balance exceeds 500.", code=400)
             self.issued_on = timezone.now().date()
             self.penalty_date = self.issued_on + timedelta(days=1)

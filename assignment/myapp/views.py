@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view
 from .serializers import *
 from .models import *
@@ -11,8 +12,10 @@ class BooksViewSet(viewsets.ModelViewSet):
     search_fields = ['title', 'authors']
 
 class MemberViewSet(viewsets.ModelViewSet):
-	queryset = Member.objects.all()
-	serializer_class = MemberSerializer
+    queryset = Member.objects.all()
+    serializer_class = MemberSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = {'outstanding' : ['gte', 'lte']}
 
 class TransactionViewSet(viewsets.ModelViewSet):
 	queryset = Transaction.objects.all()
@@ -22,6 +25,19 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 
+def find_transactions(request):
+    member = request.GET.get('member')
+    book = request.GET.get('book')
+    transactions = Transaction.objects.filter(issued_on__isnull = False, returned_on__isnull = True)
+    if not transactions:
+        return JsonResponse({"error": "No pending transactions or no book has been issued yet"}, status = status.HTTP_400_BAD_REQUEST)
+    if not member and not book:
+        return JsonResponse({'members': list(transactions.values_list('member', flat=True).distinct())})
+    elif member and not book:
+        return JsonResponse({'books': list(transactions.filter(member=member).values_list('book', flat=True).distinct())})
+    elif member and book:
+        return JsonResponse({'transactions': list(transactions.filter(member=member, book=book).values_list('id', flat=True))})
+        
 @csrf_exempt
 def return_transaction(request, id):
     try:
