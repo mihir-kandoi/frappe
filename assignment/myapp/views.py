@@ -64,9 +64,6 @@ def return_transaction(request, id):
 def get_books(request_data, qty, data=[], page=1):
     request_data["page"] = page
     response = requests.get(url="https://frappe.io/api/method/frappe-library", params=request_data).json()['message']
-
-    if not response: # return if response is empty ie there are no more books with the given paramaters
-        return data
     
     unique_data = {} # this block will remove duplicate books received in the response
     for sub_data in response:
@@ -77,6 +74,10 @@ def get_books(request_data, qty, data=[], page=1):
 
     response = [item for item in response if item not in data] # this will remove duplicates from this reponse by checking the responses of previous pages
     response = [item for item in response if Book.objects.filter(pk=item['bookID']).exists() == False] # this will remove duplicates from the books already in the database
+
+    if not response: # return if response is empty ie there are no more books with the given paramaters
+        return data
+    
     data.extend(response) # append the sanitized response to the dataset
     if qty:
         if qty == len(response): # we have got the required amount of books, return.
