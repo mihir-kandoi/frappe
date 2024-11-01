@@ -138,5 +138,6 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    "https://vue-frappe.vercel.app/"
+    "https://vue-frappe.vercel.app",
+    "http://localhost:5173"
 ]
