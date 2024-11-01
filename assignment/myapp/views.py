@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view
 from .serializers import *
@@ -8,18 +8,20 @@ import requests
 class BooksViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BooksSerializer
-    filter_backends = [filters.SearchFilter] # to filter books by title and authors
-    search_fields = ['title', 'authors']
+    filter_backends = [DjangoFilterBackend] # to filter books by title and authors
+    filterset_fields = {'title': ['contains'], 'authors': ['contains']}
 
 class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = {'outstanding' : ['gte', 'lte']}
+    # pagination_class = None
 
 class TransactionViewSet(viewsets.ModelViewSet):
-	queryset = Transaction.objects.all()
-	serializer_class = TransactionSerializer
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+    # pagination_class = None
 
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
@@ -30,11 +32,13 @@ def find_transactions(request):
     book = request.GET.get('book')
     transactions = Transaction.objects.filter(issued_on__isnull = False, returned_on__isnull = True)
     if not transactions:
-        return JsonResponse({"error": "No pending transactions or no book has been issued yet"}, status = status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({"error": "No pending transactions or no book has been issued yet"})
     if not member and not book:
-        return JsonResponse({'members': list(transactions.values_list('member', flat=True).distinct())})
+        members = Member.objects.filter(id__in = list(transactions.values_list('member', flat=True).distinct()))
+        return JsonResponse({'members': list(members.values('id', 'name'))})
     elif member and not book:
-        return JsonResponse({'books': list(transactions.filter(member=member).values_list('book', flat=True).distinct())})
+        books = Book.objects.filter(bookID__in = list(transactions.filter(member=member).values_list('book', flat=True).distinct()))
+        return JsonResponse({'books': list(books.values('bookID', 'title'))})
     elif member and book:
         return JsonResponse({'transactions': list(transactions.filter(member=member, book=book).values_list('id', flat=True))})
         
